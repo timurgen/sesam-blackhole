@@ -36,7 +36,9 @@ func FetchData(w http.ResponseWriter, r *http.Request) {
 //input data available options:
 //	*should_fail - if exists and equal to true then 400 bad request will be returned back
 func SendData(w http.ResponseWriter, r *http.Request) {
+	log.Println("\r\n====\t\tREQUEST START\t\t====")
 	var bodyJsonArray []interface{}
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println(err)
@@ -44,18 +46,25 @@ func SendData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.Unmarshal(body, &bodyJsonArray)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
+	log.Printf("Got batch of %d entities", len(bodyJsonArray))
+
 	for _, item := range bodyJsonArray {
 		mappedItem := item.(map[string]interface{})
+		log.Printf("Processing entity with id: %s", mappedItem["_id"])
+		//will return 400 Bad request if entity contains this key evaluated as true
 		if mappedItem["should_fail"] != nil && mappedItem["should_fail"] == true {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.Printf("Entity %s should fail, return HTTP 400", mappedItem["_id"])
+			http.Error(w, "Entity had to fail =(", http.StatusBadRequest)
+			break
 		}
 	}
+
+	log.Println("\r\n====\t\tREQUEST FINISH\t\t====")
 }
 
 func TransformData(w http.ResponseWriter, r *http.Request) {
